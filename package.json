@@ -22,8 +22,10 @@
   },
   "dependencies": {
     "@project-serum/serum": "^0.13.20",
+    "@pythnetwork/client": "^2.2.0",
     "@solana/web3.js": "^0.91.0",
     "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "tedis": "^0.1.12"
   },
@@ -37,6 +39,6 @@
     "test": "jasmine-ts --config=jasmine.json"
   },
   "engines": {
-    "node": "14.x"
+    "node": "16.x"
   }
 }

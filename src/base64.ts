@@ -1,33 +1,32 @@
-import { Candle, Trade, TradeSide, Coder } from './interfaces';
+import { Candle, PriceData, Coder } from "./interfaces";
 
-export class Base64TradeCoder implements Coder<Trade> {
-  constructor() {};
+export class Base64TradeCoder implements Coder<PriceData> {
+  constructor() {}
 
-  encode(t: Trade): string {
+  encode(p: PriceData): string {
     const buf = Buffer.alloc(15);
-    buf.writeFloatLE(t.price, 0);
-    buf.writeFloatLE(t.size, 4);
-    buf.writeUIntLE(t.ts, 8, 6);
-    buf.writeUInt8(t.side, 14);
-    const base64 = buf.toString('base64');
+    buf.writeFloatLE(p.price, 0);
+    buf.writeFloatLE(p.confidence, 4);
+    buf.writeUIntLE(p.ts, 8, 6);
+    buf.writeUInt8(p.status, 14);
+    const base64 = buf.toString("base64");
     return base64;
-  };
+  }
 
-  decode(s: string): Trade {
-    const buf = Buffer.from(s, 'base64');
-    const trade = {
+  decode(s: string): PriceData {
+    const buf = Buffer.from(s, "base64");
+    const data = {
       price: buf.readFloatLE(0),
-      size: buf.readFloatLE(4),
+      confidence: buf.readFloatLE(4),
       ts: buf.readUIntLE(8, 6),
-      side: buf.readUInt8(14) as TradeSide,
+      status: buf.readUInt8(14),
     };
-    return trade;
-  };
-};
-
+    return data;
+  }
+}
 
 export class Base64CandleCoder implements Coder<Candle> {
-  constructor() {};
+  constructor() {}
 
   encode(c: Candle): string {
     const buf = Buffer.alloc(36);
@@ -35,27 +34,22 @@ export class Base64CandleCoder implements Coder<Candle> {
     buf.writeFloatLE(c.close, 4);
     buf.writeFloatLE(c.high, 8);
     buf.writeFloatLE(c.low, 12);
-    buf.writeFloatLE(c.volume, 16);
-    buf.writeFloatLE(c.vwap, 20);
-    buf.writeUIntLE(c.start, 24, 6);
-    buf.writeUIntLE(c.end, 30, 6);
-    const base64 = buf.toString('base64');
+    buf.writeUIntLE(c.start, 16, 6);
+    buf.writeUIntLE(c.end, 22, 6);
+    const base64 = buf.toString("base64");
     return base64;
-  };
+  }
 
   decode(s: string): Candle {
-    const buf = Buffer.from(s, 'base64');
+    const buf = Buffer.from(s, "base64");
     const candle = {
       open: buf.readFloatLE(0),
       close: buf.readFloatLE(4),
       high: buf.readFloatLE(8),
       low: buf.readFloatLE(12),
-      volume: buf.readFloatLE(16),
-      vwap: buf.readFloatLE(20),
-      start: buf.readUIntLE(24, 6),
-      end: buf.readUIntLE(30, 6)
+      start: buf.readUIntLE(16, 6),
+      end: buf.readUIntLE(22, 6),
     };
     return candle;
-  };
-
+  }
 }

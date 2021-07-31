@@ -1,8 +1,8 @@
 
-import { Candle, Trade } from "./interfaces";
+import { Candle, PriceData } from "./interfaces";
 
 
-export function batch(ts: Trade[], start: number, end: number): Candle | undefined {
+export function batch(ts: PriceData[], start: number, end: number): Candle | undefined {
 
   const batchTrades = ts.filter(t => t.ts >= start && t.ts < end);
 
@@ -14,19 +14,13 @@ export function batch(ts: Trade[], start: number, end: number): Candle | undefin
               close: t0.price,
               high: t0.price,
               low: t0.price,
-              volume: t0.size,
-              vwap: t0.price * t0.size,
               start, end };
 
     batchTrades.slice(1).forEach(t => {
       c.close = t.price;
       c.high = Math.max(c.high, t.price);
       c.low = Math.min(c.low, t.price);
-      c.volume += t.size;
-      c.vwap += t.price * t.size;
     });
-
-    c.vwap /= c.volume;
 
     return c;
   }
