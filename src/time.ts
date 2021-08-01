@@ -1,4 +1,3 @@
-
 const SECONDS = 1000;
 const MINUTES = 60 * SECONDS;
 const HOURS = 60 * MINUTES;
@@ -14,7 +13,7 @@ export const resolutions: { [id: string]: number | undefined } = {
   "180": 3 * HOURS,
   "240": 4 * HOURS,
   "1D": 24 * HOURS,
-}
+};
 
 interface Timespan {
   Millis?: number;
@@ -29,8 +28,5 @@ export function sleep(time: Timespan) {
   const minutes = time.Minutes || 0;
   const hours = time.Hours || 0;
   const total = millis + SECONDS * seconds + MINUTES * minutes + HOURS * hours;
-  return new Promise((resolve) => setTimeout(resolve, total))
+  return new Promise((resolve) => setTimeout(resolve, total));
 }
-
-
-
