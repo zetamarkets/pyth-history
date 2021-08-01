@@ -88,32 +88,6 @@ export class RedisStore implements CandleStore, BufferStore, KeyValStore {
     return candles;
   }
 
-  // async loadTrades(
-  //   resolution: number,
-  //   from: number,
-  //   to: number
-  // ): Promise<Trade[]> {
-  //   const keys = this.keysForCandles(resolution, from, to);
-  //   const tradeRequests = keys.map((k) => this.connection.lrange(k, 0, -1));
-  //   const tradeResponses = await Promise.all(tradeRequests);
-  //   const trades = tradeResponses.flat().map((t) => coder.decode(t));
-  //   return trades.filter((t) => t.ts >= from && t.ts < to);
-  // }
-
-  // async loadRecentTrades(): Promise<Trade[]> {
-  //   const today = Date.now();
-  //   const yesterday = today - 24 * 60 * 60 * 1000;
-  //   const keys = [this.keyForDay(yesterday), this.keyForDay(today)];
-  //   const tradeRequests = keys.map((k) => this.connection.lrange(k, 0, -1));
-  //   const tradeResponses = await Promise.all(tradeRequests);
-  //   const trades = tradeResponses
-  //     .flat()
-  //     .slice(-50)
-  //     .reverse()
-  //     .map((t) => coder.decode(t));
-  //   return trades;
-  // }
-
   // interface BufferStore
 
   async storeBuffer(ts: number, b: Buffer): Promise<void> {

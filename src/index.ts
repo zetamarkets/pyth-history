@@ -1,11 +1,10 @@
 require("dotenv").config();
-import { Account, Connection, PublicKey } from "@solana/web3.js";
 import cors from "cors";
 import express from "express";
 import { Tedis, TedisPool } from "tedis";
 import { URL } from "url";
 import { PricefeedConfig } from "./interfaces";
-import { RedisConfig, RedisStore, createRedisStore } from "./redis";
+import { RedisStore } from "./redis";
 import { resolutions, sleep } from "./time";
 import { collectPricefeed } from "./oracle";
 
@@ -30,13 +29,8 @@ const clusterUrl =
 
 // Oracle config (devnet)
 const pricefeeds: Record<string, string> = {
-  "SOL/USDC": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
+  "SOL/USD": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
 };
-
-// const symbolsByPk = Object.assign(
-//   {},
-//   ...Object.entries(oracleFeeds).map(([a, b]) => ({ [b]: a }))
-// );
 
 Object.entries(pricefeeds).forEach((pricefeed) => {
   const [pricefeedName, pricefeedPk] = pricefeed;

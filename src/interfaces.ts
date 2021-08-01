@@ -13,13 +13,6 @@ export interface PriceData {
   status: number;
 }
 
-// export interface Trade {
-//   price: number;
-//   side: TradeSide;
-//   size: number;
-//   ts: number;
-// };
-
 export interface Coder<T> {
   encode: (t: T) => string;
   decode: (s: string) => T;
