@@ -1,7 +1,6 @@
-import { Base64TradeCoder } from "./base64";
-const coder = new Base64TradeCoder();
+// import { Base64TradeCoder } from "./base64";
+// const coder = new Base64TradeCoder();
 
-import { batch } from "./candle";
 import {
   PriceData,
   BufferStore,
@@ -9,90 +8,85 @@ import {
   CandleStore,
   KeyValStore,
 } from "./interfaces";
-import { Tedis } from "tedis";
+import { RedisTimeSeries, TSAggregationType } from "redis-modules-sdk";
 
 export interface RedisConfig {
   host: string;
   port: number;
-  db: number;
   password?: string;
 }
 
-export class RedisStore implements CandleStore, BufferStore {
-  connection: Tedis;
+export class RedisStore implements CandleStore {
+  client: RedisTimeSeries;
   symbol: string;
 
-  constructor(connection: Tedis, symbol: string) {
-    this.connection = connection;
+  constructor(client: RedisTimeSeries, symbol: string) {
+    this.client = client;
     this.symbol = symbol;
-  }
-
-  // Takes in unix timestamp and converts to formatted string e.g. 2021-07-31T06:12:51.175Z
-  keyForDay(ts: number): string {
-    const d = new Date(ts);
-    return `${
-      this.symbol
-    }-${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
-  }
-
-  keyMatchForCandle(resolution: number, from: number): string {
-    const keys = [
-      this.keyForBuffer(from),
-      this.keyForBuffer(from + resolution),
-    ];
-    for (let i = 0; i < Math.min(keys[0].length, keys[1].length); i += 1) {
-      if (keys[0][i] != keys[1][i]) {
-        return keys[0].substr(0, i) + "*";
-      }
-    }
-    return keys[0];
-  }
-
-  keysForCandles(resolution: number, from: number, to: number): string[] {
-    const keys = new Set<string>();
-    while (from < to) {
-      keys.add(this.keyForDay(from));
-      from += resolution;
-    }
-    keys.add(this.keyForDay(to));
-    return Array.from(keys);
-  }
-
-  keyForBuffer(ts: number): string {
-    return `${this.symbol}-${ts}`;
   }
 
   // interface CandleStore
 
   async storePrice(p: PriceData): Promise<void> {
-    await this.connection.rpush(this.keyForDay(p.ts), coder.encode(p));
+    await this.client.add(
+      `${this.symbol}-Price`,
+      p.ts.toString(),
+      p.price.toString()
+    ); // coder.encode(p));
+  }
+
+  async storeConfidence(p: PriceData): Promise<void> {
+    await this.client.add(
+      `${this.symbol}-Confidence`,
+      p.ts.toString(),
+      p.price.toString()
+    ); // coder.encode(p));
   }
 
   async loadCandles(
     resolution: number,
     from: number,
     to: number
-  ): Promise<Candle[]> {
-    const keys = this.keysForCandles(resolution, from, to);
-    const tradeRequests = keys.map((k) => this.connection.lrange(k, 0, -1));
-    const tradeResponses = await Promise.all(tradeRequests);
-    const trades = tradeResponses.flat().map((t) => coder.decode(t));
-    const candles: Candle[] = [];
-    while (from + resolution <= to) {
-      let candle = batch(trades, from, from + resolution);
-      if (candle) {
-        candles.push(candle);
-      }
-      from += resolution;
-    }
-    return candles;
+  ): Promise<Candle> {
+    // Map aggregations across data
+    const aggregations = ["first", "max", "min", "last"];
+    const agg_results = aggregations.map((agg) => {
+      // Range from-to is inclusive
+      // @ts-ignore
+      const result: Promise<number[][]> = this.client.range(
+        `${this.symbol}-Price`,
+        from.toString(),
+        to.toString(),
+        {
+          aggregation: {
+            type: agg as TSAggregationType,
+            timeBucket: resolution,
+          },
+        }
+      );
+      return result;
+    });
+    const [o, h, l, c] = await Promise.all(agg_results);
+    const ohlc: Candle = {
+      open: o.map((x) => x[1]),
+      high: h.map((x) => x[1]),
+      low: l.map((x) => x[1]),
+      close: c.map((x) => x[1]),
+      start: o.map((x) => x[0] / 1000),
+    };
+    return ohlc;
   }
 
-  // interface BufferStore
-
-  async storeBuffer(ts: number, b: Buffer): Promise<void> {
-    const key = this.keyForBuffer(ts);
-    await this.connection.set(key, b.toString("base64"));
+  async loadRecentPrices(): Promise<number[]> {
+    const today = Date.now();
+    const yesterday = today - 24 * 60 * 60 * 1000;
+    const prices = this.client.range(
+      `${this.symbol}-Price`,
+      yesterday.toString(),
+      today.toString(),
+      { aggregation: { type: "avg", timeBucket: 1000 * 60 } }
+    );
+    return prices;
   }
 }
 
@@ -100,11 +94,13 @@ export async function createRedisStore(
   config: RedisConfig,
   symbol: string
 ): Promise<RedisStore> {
-  const conn = new Tedis({
+  const client = new RedisTimeSeries({
     host: config.host,
     port: config.port,
     password: config.password,
   });
-  await conn.command("SELECT", config.db);
-  return new RedisStore(conn, symbol);
+  // await client.command("SELECT", config.db);
+  // Connect to the Redis database with RedisTimeSeries module
+  await client.connect();
+  return new RedisStore(client, symbol);
 }

@@ -19,12 +19,11 @@ export interface Coder<T> {
 }
 
 export interface Candle {
-  open: number;
-  close: number;
-  high: number;
-  low: number;
-  start: number;
-  end: number;
+  open: number[];
+  high: number[];
+  low: number[];
+  close: number[];
+  start: number[];
 }
 
 export interface CandleStore {
@@ -33,7 +32,7 @@ export interface CandleStore {
     resolution: number,
     from: number,
     to: number
-  ) => Promise<Candle[]>;
+  ) => Promise<Candle>;
 }
 
 export interface BufferStore {
