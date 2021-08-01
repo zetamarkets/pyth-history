@@ -1,7 +1,6 @@
 require("dotenv").config();
 import cors from "cors";
 import express from "express";
-// import { Tedis, TedisPool } from "tedis";
 import { RedisTimeSeries } from "redis-modules-sdk";
 import { URL } from "url";
 import { PricefeedConfig } from "./interfaces";
@@ -19,8 +18,6 @@ let password: string | undefined;
 if (redisUrl.password !== "") {
   password = redisUrl.password;
 }
-// const max_conn = parseInt(process.env.REDIS_MAX_CONN || "") || 200;
-// const redisConfig = { host, port, password, db: 0, max_conn };
 const redisConfig = { host, port, password };
 const client = new RedisTimeSeries(redisConfig);
 
@@ -38,16 +35,21 @@ async function main(
   client: RedisTimeSeries,
   pricefeeds: Record<string, string>
 ) {
-  await client.connect();
-  Object.entries(pricefeeds).forEach((pricefeed) => {
-    const [pricefeedName, pricefeedPk] = pricefeed;
-    const pc = {
-      clusterUrl,
-      pricefeedName,
-      pricefeedPk,
-    } as PricefeedConfig;
-    collectPricefeed(pc, { host, port, password });
-  });
+  try {
+    await client.connect();
+    Object.entries(pricefeeds).forEach((pricefeed) => {
+      const [pricefeedName, pricefeedPk] = pricefeed;
+      const pc = {
+        clusterUrl,
+        pricefeedName,
+        pricefeedPk,
+      } as PricefeedConfig;
+      collectPricefeed(pc, { host, port, password });
+    });
+  } catch (e) {
+    console.error({ e });
+    client.disconnect();
+  }
 }
 
 main(client, pricefeeds);
@@ -140,18 +142,15 @@ app.get("/tv/history", async (req, res) => {
     console.error({ req, e });
     const error = { s: "error" };
     res.status(500).send(error);
-    //Disconnect from the Redis database with RedisTimeSeries module
-    await client.disconnect();
   }
 });
 
 app.get("/tv/recentprices", async (req, res) => {
-  // parse
+  // this function is primarily for debugging purposes
   const marketName = req.query.symbol as string;
 
   // respond
   try {
-    await client.connect();
     try {
       const store = new RedisStore(client, marketName);
 

@@ -1,12 +1,7 @@
-// import { Base64TradeCoder } from "./base64";
-// const coder = new Base64TradeCoder();
-
 import {
   PriceData,
-  BufferStore,
   Candle,
   CandleStore,
-  KeyValStore,
 } from "./interfaces";
 import { RedisTimeSeries, TSAggregationType } from "redis-modules-sdk";
 
@@ -99,7 +94,6 @@ export async function createRedisStore(
     port: config.port,
     password: config.password,
   });
-  // await client.command("SELECT", config.db);
   // Connect to the Redis database with RedisTimeSeries module
   await client.connect();
   return new RedisStore(client, symbol);
