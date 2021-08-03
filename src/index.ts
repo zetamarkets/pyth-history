@@ -1,7 +1,7 @@
 require("dotenv").config();
 import cors from "cors";
 import express from "express";
-import { Tedis, TedisPool } from "tedis";
+import { RedisTimeSeries } from "redis-modules-sdk";
 import { URL } from "url";
 import { PricefeedConfig } from "./interfaces";
 import { RedisStore } from "./redis";
@@ -18,9 +18,8 @@ let password: string | undefined;
 if (redisUrl.password !== "") {
   password = redisUrl.password;
 }
-const max_conn = parseInt(process.env.REDIS_MAX_CONN || "") || 200;
-const redisConfig = { host, port, password, db: 0, max_conn };
-const pool = new TedisPool(redisConfig);
+const redisConfig = { host, port, password };
+const client = new RedisTimeSeries(redisConfig);
 
 // Solana web3 config
 const network = "devnet";
@@ -32,15 +31,28 @@ const pricefeeds: Record<string, string> = {
   "SOL/USD": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
 };
 
-Object.entries(pricefeeds).forEach((pricefeed) => {
-  const [pricefeedName, pricefeedPk] = pricefeed;
-  const pc = {
-    clusterUrl,
-    pricefeedName,
-    pricefeedPk,
-  } as PricefeedConfig;
-  collectPricefeed(pc, { host, port, password, db: 0 });
-});
+async function main(
+  client: RedisTimeSeries,
+  pricefeeds: Record<string, string>
+) {
+  try {
+    await client.connect();
+    Object.entries(pricefeeds).forEach((pricefeed) => {
+      const [pricefeedName, pricefeedPk] = pricefeed;
+      const pc = {
+        clusterUrl,
+        pricefeedName,
+        pricefeedPk,
+      } as PricefeedConfig;
+      collectPricefeed(pc, { host, port, password });
+    });
+  } catch (e) {
+    console.error({ e });
+    client.disconnect();
+  }
+}
+
+main(client, pricefeeds);
 
 // Express App
 const app = express();
@@ -99,9 +111,9 @@ app.get("/tv/history", async (req, res) => {
 
   // respond
   try {
-    const conn = await pool.getTedis();
+    // await client.connect();
     try {
-      const store = new RedisStore(conn, marketName);
+      const store = new RedisStore(client, marketName);
 
       // snap candle boundaries to exact hours
       from = Math.floor(from / resolution) * resolution;
@@ -114,18 +126,40 @@ app.get("/tv/history", async (req, res) => {
       const candles = await store.loadCandles(resolution, from, to);
       const response = {
         s: "ok",
-        t: candles.map((c) => c.start / 1000),
-        c: candles.map((c) => c.close),
-        o: candles.map((c) => c.open),
-        h: candles.map((c) => c.high),
-        l: candles.map((c) => c.low),
+        t: candles.start,
+        o: candles.open,
+        h: candles.high,
+        l: candles.low,
+        c: candles.close,
         // v: candles.map((c) => c.volume),
       };
       res.set("Cache-control", "public, max-age=1");
       res.send(response);
       return;
     } finally {
-      pool.putTedis(conn);
+    }
+  } catch (e) {
+    console.error({ req, e });
+    const error = { s: "error" };
+    res.status(500).send(error);
+  }
+});
+
+app.get("/tv/recentprices", async (req, res) => {
+  // this function is primarily for debugging purposes
+  const marketName = req.query.symbol as string;
+
+  // respond
+  try {
+    try {
+      const store = new RedisStore(client, marketName);
+
+      const recentPrices = await store.loadRecentPrices();
+      res.send(recentPrices);
+      return;
+    } finally {
+      //Disconnect from the Redis database with RedisTimeSeries module
+      await client.disconnect();
     }
   } catch (e) {
     console.error({ req, e });
