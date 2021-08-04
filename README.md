@@ -5,7 +5,9 @@ This is powering the charts on [trade.zeta.markets](https://trade.zeta.markets).
 Feel free to improve and extend for the benefit for the larger solana ecosystem.
 
 ** Note: This does not include a functioning trading view to inspect the
-data.** Check the [mango markets gui code](https://github.com/blockworks-foundation/mango-ui-v2/blob/main/components/TradingView/index.tsx) for a reference how to use this API to display a TradingView.
+data.** 
+
+Check the [mango markets gui code](https://github.com/blockworks-foundation/mango-ui-v2/blob/main/components/TradingView/index.tsx) for a reference how to use this API to display a TradingView.
 
 ## Configuration
 
