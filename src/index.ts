@@ -7,6 +7,7 @@ import { PricefeedConfig } from "./interfaces";
 import { RedisStore } from "./redis";
 import { resolutions, sleep } from "./time";
 import { collectPricefeed } from "./oracle";
+import { CandleRow, LineRow, CandleList } from "./interfaces";
 
 // Redis config
 const redisUrl = new URL(
@@ -31,6 +32,33 @@ const pricefeeds: Record<string, string> = {
   "SOL/USD": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
 };
 
+function candleListToCandleRows(candles: CandleList): CandleRow[] {
+  let rows = [];
+  for (let i = 0; i < candles.start.length; i++) {
+    const row = {
+      time: candles.start[i],
+      open: candles.open[i],
+      high: candles.high[i],
+      low: candles.low[i],
+      close: candles.close[i],
+    };
+    rows.push(row);
+  }
+  return rows;
+}
+
+function candleListToLineRows(candles: CandleList): LineRow[] {
+  let rows = [];
+  for (let i = 0; i < candles.start.length; i++) {
+    const row = {
+      time: candles.start[i],
+      value: candles.close[i],
+    };
+    rows.push(row);
+  }
+  return rows;
+}
+
 async function main(
   client: RedisTimeSeries,
   pricefeeds: Record<string, string>
@@ -47,7 +75,7 @@ async function main(
       collectPricefeed(pc, { host, port, password });
     });
   } catch (e) {
-    console.error({ e });
+    console.error(e);
     client.disconnect();
   }
 }
@@ -97,6 +125,7 @@ app.get("/tv/history", async (req, res) => {
   const resolution = resolutions[req.query.resolution as string] as number;
   let from = parseInt(req.query.from as string) * 1000;
   let to = parseInt(req.query.to as string) * 1000;
+  const chartType = req.query.type || "candle";
 
   // validate
   const validSymbol = marketPk != undefined;
@@ -111,33 +140,47 @@ app.get("/tv/history", async (req, res) => {
 
   // respond
   try {
-    // await client.connect();
-    try {
-      const store = new RedisStore(client, marketName);
+    const store = new RedisStore(client, marketName);
 
-      // snap candle boundaries to exact hours
-      from = Math.floor(from / resolution) * resolution;
-      to = Math.ceil(to / resolution) * resolution;
+    // snap candle boundaries to exact hours
+    from = Math.floor(from / resolution) * resolution;
+    to = Math.ceil(to / resolution) * resolution;
 
-      // ensure the candle is at least one period in length
-      if (from == to) {
-        to += resolution;
-      }
-      const candles = await store.loadCandles(resolution, from, to);
-      const response = {
-        s: "ok",
-        t: candles.start,
-        o: candles.open,
-        h: candles.high,
-        l: candles.low,
-        c: candles.close,
-        // v: candles.map((c) => c.volume),
-      };
-      res.set("Cache-control", "public, max-age=1");
-      res.send(response);
-      return;
-    } finally {
+    // ensure the candle is at least one period in length
+    if (from == to) {
+      to += resolution;
     }
+    const candles = await store.loadCandles(resolution, from, to);
+
+    let response = {};
+    switch (chartType) {
+      case "candle":
+        // code block
+        response = {
+          s: "ok",
+          t: candles.start,
+          o: candles.open,
+          h: candles.high,
+          l: candles.low,
+          c: candles.close,
+          // v: candles.map((c) => c.volume),
+        };
+        break;
+      case "candle-lw":
+        // code block
+        response = candleListToCandleRows(candles);
+        break;
+      case "line-lw":
+        // code block
+        response = candleListToLineRows(candles);
+        break;
+      default:
+        // If the chart type is not recognised throw an error
+        throw new Error("`chartType` is not a valid chart type");
+    }
+    res.set("Cache-control", "public, max-age=1");
+    res.send(response);
+    return;
   } catch (e) {
     console.error({ req, e });
     const error = { s: "error" };
@@ -158,8 +201,6 @@ app.get("/tv/recentprices", async (req, res) => {
       res.send(recentPrices);
       return;
     } finally {
-      //Disconnect from the Redis database with RedisTimeSeries module
-      await client.disconnect();
     }
   } catch (e) {
     console.error({ req, e });

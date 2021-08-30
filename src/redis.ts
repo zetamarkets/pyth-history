@@ -1,8 +1,4 @@
-import {
-  PriceData,
-  Candle,
-  CandleStore,
-} from "./interfaces";
+import { PriceData, CandleList, CandleStore } from "./interfaces";
 import { RedisTimeSeries, TSAggregationType } from "redis-modules-sdk";
 
 export interface RedisConfig {
@@ -42,7 +38,7 @@ export class RedisStore implements CandleStore {
     resolution: number,
     from: number,
     to: number
-  ): Promise<Candle> {
+  ): Promise<CandleList> {
     // Map aggregations across data
     const aggregations = ["first", "max", "min", "last"];
     const agg_results = aggregations.map((agg) => {
@@ -62,7 +58,7 @@ export class RedisStore implements CandleStore {
       return result;
     });
     const [o, h, l, c] = await Promise.all(agg_results);
-    const ohlc: Candle = {
+    const ohlc: CandleList = {
       open: o.map((x) => x[1]),
       high: h.map((x) => x[1]),
       low: l.map((x) => x[1]),
