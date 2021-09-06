@@ -18,12 +18,25 @@ export interface Coder<T> {
   decode: (s: string) => T;
 }
 
-export interface Candle {
+export interface CandleList {
   open: number[];
   high: number[];
   low: number[];
   close: number[];
   start: number[];
+}
+
+export interface CandleRow {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+export interface LineRow {
+  time: number;
+  value: number;
 }
 
 export interface CandleStore {
@@ -32,7 +45,7 @@ export interface CandleStore {
     resolution: number,
     from: number,
     to: number
-  ) => Promise<Candle>;
+  ) => Promise<CandleList>;
 }
 
 export interface BufferStore {
