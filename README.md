@@ -1,11 +1,13 @@
 # Pyth History
 
-Collects and aggregates trades from Pyth Network for display in a tradingview chart.
-This is powering the charts on [trade.zeta.markets](https://trade.zeta.markets).
-Feel free to improve and extend for the benefit for the larger solana ecosystem.
+![plot](images/repo_banner.png)
 
-** Note: This does not include a functioning trading view to inspect the
-data.** 
+Collects and aggregates trades from Pyth Network for display in a TradingView chart.
+This is powering the charts on [trade.zeta.markets](https://trade.zeta.markets).
+Feel free to improve and extend for the benefit for the larger Solana ecosystem.
+
+**Note: This does not include a functioning trading view to inspect the
+data.**
 
 Check the [mango markets gui code](https://github.com/blockworks-foundation/mango-ui-v2/blob/main/components/TradingView/index.tsx) for a reference how to use this API to display a TradingView.
 
@@ -30,7 +32,7 @@ For the sake of optimisations in data fetching and aggregation, I've used the [R
 
 ## Credits
 
-Many thanks to the Mango Markets team [mango.markets](https://mango.markets) who's original repo [Serum History](https://github.com/blockworks-foundation/serum-history) served as the foundation for this code.
+Many thanks to the Mango Markets team ([mango.markets](https://mango.markets)) whose original repo [Serum History](https://github.com/blockworks-foundation/serum-history) served as the foundation for this code.
 
 ## Questions / Suggestions?
 
