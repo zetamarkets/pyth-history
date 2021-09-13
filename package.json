@@ -1,27 +1,22 @@
 {
-  "name": "serum-history",
+  "name": "pyth-history",
   "version": "1.0.0",
-  "description": "Aggregate Serum DEX history for display in TradingView charts.",
+  "description": "Index and aggregate Pyth oracle feed prices for display in TradingView charts.",
   "main": "index.js",
-  "repository": "https://github.com/blockworks-foundation/serum-history",
-  "author": "Blockworks Foundation",
+  "repository": "https://github.com/zetamarkets/pyth-history",
+  "author": "Zeta Markets",
   "license": "MIT",
   "private": true,
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/cors": "^2.8.10",
     "@types/express": "^4.17.11",
-    "@types/jasmine": "^3.6.3",
     "@types/node": "^14.14.28",
-    "jasmine": "^3.6.4",
-    "jasmine-spec-reporter": "^6.0.0",
-    "jasmine-ts": "^0.3.0",
     "ts-node": "8.10.2",
     "ts-node-dev": "^1.1.1",
     "typescript": "^4.1.4"
   },
   "dependencies": {
-    "@project-serum/serum": "^0.13.20",
     "@pythnetwork/client": "^2.2.0",
     "@solana/web3.js": "^0.91.0",
     "cors": "^2.8.5",
@@ -35,8 +30,7 @@
     "clean": "rm -rf dist",
     "prepare": "run-s clean postinstall",
     "postinstall": "tsc",
-    "shell": "node -e \"$(< shell)\" -i --experimental-repl-await",
-    "test": "jasmine-ts --config=jasmine.json"
+    "shell": "node -e \"$(< shell)\" -i --experimental-repl-await"
   },
   "engines": {
     "node": "16.x"
