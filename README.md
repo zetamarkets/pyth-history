@@ -24,6 +24,10 @@ INTERVAL: time in seconds to wait between event queue polls
 ```
 You can set these via a `.env` file in the root directory.
 
+### Redis Setup
+
+For the sake of optimisations in data fetching and aggregation, I've used the [Redis Timeseries module](https://github.com/RedisTimeSeries/RedisTimeSeries/). Therefore when setting up your Redis DB, you must add the Timeseries module for it to work.
+
 ## Credits
 
 Many thanks to the Mango Markets team [mango.markets](https://mango.markets) who's original repo [Serum History](https://github.com/blockworks-foundation/serum-history) served as the foundation for this code.
