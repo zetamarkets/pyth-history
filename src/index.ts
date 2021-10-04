@@ -23,13 +23,12 @@ const redisConfig = { host, port, password };
 const client = new RedisTimeSeries(redisConfig);
 
 // Solana web3 config
-const network = "devnet";
 const clusterUrl =
-  process.env.RPC_ENDPOINT_URL || "https://api.devnet.solana.com";
+  process.env.RPC_ENDPOINT_URL || "https://api.mainnet-beta.solana.com";
 
-// Oracle config (devnet)
+// Oracle config (mainnet)
 const pricefeeds: Record<string, string> = {
-  "SOL/USD": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
+  "SOL/USD": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
 };
 
 function candleListToCandleRows(candles: CandleList): CandleRow[] {
