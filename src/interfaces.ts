@@ -1,16 +1,10 @@
 import BN from "bn.js";
+import { PriceData } from "@pythnetwork/client";
 
 export interface PricefeedConfig {
   clusterUrl: string;
   pricefeedName: string;
   pricefeedPk: string;
-}
-
-export interface PriceData {
-  price: number;
-  confidence: number;
-  ts: number;
-  status: number;
 }
 
 export interface Coder<T> {
@@ -40,7 +34,7 @@ export interface LineRow {
 }
 
 export interface CandleStore {
-  storePrice: (p: PriceData) => Promise<void>;
+  storePrice: (p: PriceData, ts: number) => Promise<void>;
   loadCandles: (
     resolution: number,
     from: number,
