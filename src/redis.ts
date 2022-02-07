@@ -23,7 +23,7 @@ export class RedisStore implements CandleStore {
         `${this.symbol}-Price`,
         ts.toString(),
         p.price.toString(),
-        { onDuplicate: "LAST" }
+        { onDuplicate: "FIRST" }
       );
     }
   }
@@ -34,7 +34,7 @@ export class RedisStore implements CandleStore {
         `${this.symbol}-Confidence`,
         ts.toString(),
         p.confidence.toString(),
-        { onDuplicate: "LAST" }
+        { onDuplicate: "FIRST" }
       );
     }
   }
