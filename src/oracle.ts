@@ -1,5 +1,5 @@
 import { Connection, PublicKey, Context, AccountInfo } from "@solana/web3.js";
-import { PricefeedConfig, PriceData } from "./interfaces";
+import { PricefeedConfig } from "./interfaces";
 import { parsePriceData } from "@pythnetwork/client";
 import { RedisConfig, RedisStore, createRedisStore } from "./redis";
 
@@ -14,11 +14,11 @@ export async function collectPricefeed(p: PricefeedConfig, r: RedisConfig) {
     accountInfo: AccountInfo<Buffer>,
     context: Context
   ) {
-    const { price, confidence, status } = parsePriceData(accountInfo.data);
-    console.log(`$${price} \xB1$${confidence}`);
+    const priceData = parsePriceData(accountInfo.data);
+    console.log(`$${priceData.price} \xB1$${priceData.confidence}`);
     console.log(context.slot);
     const ts = Date.now();
-    store.storePrice({ price, confidence, ts, status });
+    store.storePrice(priceData, ts);
   }
 
   // Streaming approach: fetch price data on account change via ws

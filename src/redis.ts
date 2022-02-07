@@ -1,4 +1,5 @@
-import { PriceData, CandleList, CandleStore } from "./interfaces";
+import { CandleList, CandleStore } from "./interfaces";
+import { PriceData } from "@pythnetwork/client";
 import { RedisTimeSeries, TSAggregationType } from "redis-modules-sdk";
 
 export interface RedisConfig {
@@ -16,22 +17,26 @@ export class RedisStore implements CandleStore {
     this.symbol = symbol;
   }
 
-  // interface CandleStore
-
-  async storePrice(p: PriceData): Promise<void> {
-    await this.client.add(
-      `${this.symbol}-Price`,
-      p.ts.toString(),
-      p.price.toString()
-    ); // coder.encode(p));
+  async storePrice(p: PriceData, ts: number): Promise<void> {
+    if (p.price !== undefined) {
+      await this.client.add(
+        `${this.symbol}-Price`,
+        ts.toString(),
+        p.price.toString(),
+        { onDuplicate: "LAST" }
+      );
+    }
   }
 
-  async storeConfidence(p: PriceData): Promise<void> {
-    await this.client.add(
-      `${this.symbol}-Confidence`,
-      p.ts.toString(),
-      p.price.toString()
-    ); // coder.encode(p));
+  async storeConfidence(p: PriceData, ts: number): Promise<void> {
+    if (p.confidence !== undefined) {
+      await this.client.add(
+        `${this.symbol}-Confidence`,
+        ts.toString(),
+        p.confidence.toString(),
+        { onDuplicate: "LAST" }
+      );
+    }
   }
 
   async loadCandles(
