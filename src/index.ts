@@ -29,6 +29,7 @@ const clusterUrl =
 // Oracle config (mainnet)
 const pricefeeds: Record<string, string> = {
   "SOL/USD": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
+  "BTC/USD": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU",
 };
 
 function candleListToCandleRows(candles: CandleList): CandleRow[] {
