@@ -30,6 +30,7 @@ const clusterUrl =
 const pricefeeds: Record<string, string> = {
   "SOL/USD": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
   "BTC/USD": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU",
+  "ETH/USD": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
 };
 
 function candleListToCandleRows(candles: CandleList): CandleRow[] {
@@ -64,6 +65,7 @@ async function main(
   pricefeeds: Record<string, string>
 ) {
   try {
+    console.log("Connecting to redis client...");
     await client.connect();
     Object.entries(pricefeeds).forEach((pricefeed) => {
       const [pricefeedName, pricefeedPk] = pricefeed;
@@ -72,6 +74,7 @@ async function main(
         pricefeedName,
         pricefeedPk,
       } as PricefeedConfig;
+      console.log(`Collecting ${pricefeedName} price feed...`);
       collectPricefeed(pc, { host, port, password });
     });
   } catch (e) {

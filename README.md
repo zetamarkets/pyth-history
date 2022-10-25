@@ -19,7 +19,7 @@ Check the [mango markets gui code](https://github.com/blockworks-foundation/mang
   So far the following variables exist:
 
 ```
-REDISCLOUD_URL: redis connection url
+REDISCLOUD_URL: redis connection url (redis://<username>:<password>@<hostname>:<port>)
 REDIS_MAX_CONN: maximum number of concurrent connections used by the redis pool
 RPC_ENDPOINT_URL: solana rpc connection url
 INTERVAL: time in seconds to wait between event queue polls
@@ -30,6 +30,15 @@ You can set these via a `.env` file in the root directory.
 
 For the sake of optimisations in data fetching and aggregation, I've used the [Redis Timeseries module](https://github.com/RedisTimeSeries/RedisTimeSeries/). Therefore when setting up your Redis DB, you must add the Timeseries module for it to work.
 
+
+## Build
+To run on a docker container:
+```
+docker build -t zeta-pyth-history:latest .
+```
+```
+docker run --rm --env-file=.env zeta-pyth-history
+```
 ## Credits
 
 Many thanks to the Mango Markets team ([mango.markets](https://mango.markets)) whose original repo [Serum History](https://github.com/blockworks-foundation/serum-history) served as the foundation for this code.
