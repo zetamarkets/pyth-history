@@ -45,6 +45,7 @@ function candleListToCandleRows(candles: CandleList): CandleRow[] {
     };
     rows.push(row);
   }
+
   return rows;
 }
 
