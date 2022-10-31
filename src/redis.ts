@@ -61,6 +61,18 @@ export class RedisStore implements CandleStore {
     };
     return ohlc;
   }
+
+  async loadRecentPrices(): Promise<[number, string][]> {
+    const today = Date.now();
+    const yesterday = today - 24 * 60 * 60 * 1000;
+    const prices = await this.client.range(
+      `${this.symbol}-PERP`,
+      yesterday.toString(),
+      today.toString(),
+      { aggregation: { type: "avg", timeBucket: 1000 * 60 } }
+    );
+    return prices;
+  }
 }
 
 export async function createRedisStore(
