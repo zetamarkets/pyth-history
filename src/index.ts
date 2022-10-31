@@ -37,7 +37,7 @@ async function exchangeCallback(
   if (eventType == events.EventType.GREEKS) {
     let midpoint = Exchange.getGreeks(asset).perpLatestMidpoint.toNumber();
     // Greeks can update independent of midpoint
-    if (midpoint != currentMidpointMap.get(asset)) {
+    if (midpoint != currentMidpointMap.get(asset) && midpoint != 0) {
       collectMidpoint(storeMap.get(asset)!, midpoint, feedNameMap.get(asset)!);
       currentMidpointMap.set(asset, midpoint);
     }
