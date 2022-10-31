@@ -28,17 +28,6 @@ export class RedisStore implements CandleStore {
     }
   }
 
-  async storeConfidence(p: PriceData, ts: number): Promise<void> {
-    if (p.confidence !== undefined) {
-      await this.client.add(
-        `${this.symbol}-Confidence`,
-        ts.toString(),
-        p.confidence.toString(),
-        { onDuplicate: "FIRST" }
-      );
-    }
-  }
-
   async loadCandles(
     resolution: number,
     from: number,
