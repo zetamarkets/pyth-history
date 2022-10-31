@@ -10,7 +10,7 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws --version
       - $(aws ecr get-login --region $REGION --no-include-email)
-      - REPOSITORY_URI=840153641671.dkr.ecr.$REGION.amazonaws.com/$ECR_REPO_NAME
+      - REPOSITORY_URI=840153641671.dkr.ecr.ap-southeast-1.amazonaws.com/zetadex-perp-price-indexer
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
   build:
