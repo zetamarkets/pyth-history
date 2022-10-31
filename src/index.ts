@@ -145,7 +145,10 @@ app.get("/tv/symbols", async (req, res) => {
 app.get("/tv/history", async (req, res) => {
   // parse
   const marketName = req.query.symbol as string;
-  const asset = assets.nameToAsset(marketName);
+  let asset = assets.Asset.UNDEFINED;
+  try {
+    asset = assets.nameToAsset(marketName);
+  } catch (_e) {}
   const resolution = resolutions[req.query.resolution as string] as number;
   let from = parseInt(req.query.from as string) * 1000;
   let to = parseInt(req.query.to as string) * 1000;
