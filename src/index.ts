@@ -93,7 +93,7 @@ async function main(client: RedisTimeSeries) {
         asset,
         await createRedisStore(redisConfig, assets.assetToName(asset)!)
       );
-      feedNameMap.set(asset, `${assets.assetToName(asset)}`);
+      feedNameMap.set(asset, `${assets.assetToName(asset)}-PERP`);
     }
 
     console.log("Loading Zeta Exchange...");
