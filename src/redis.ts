@@ -20,7 +20,7 @@ export class RedisStore implements CandleStore {
   async storePrice(p: PriceData, ts: number): Promise<void> {
     if (p.price !== undefined) {
       await this.client.add(
-        `${this.symbol}-PERP`,
+        `${this.symbol}`,
         ts.toString(),
         p.price.toString(),
         { onDuplicate: "FIRST" }
@@ -39,7 +39,7 @@ export class RedisStore implements CandleStore {
       // Range from-to is inclusive
       // @ts-ignore
       const result: Promise<number[][]> = this.client.range(
-        `${this.symbol}-PERP`,
+        `${this.symbol}`,
         from.toString(),
         to.toString(),
         {
@@ -66,7 +66,7 @@ export class RedisStore implements CandleStore {
     const today = Date.now();
     const yesterday = today - 24 * 60 * 60 * 1000;
     const prices = await this.client.range(
-      `${this.symbol}-PERP`,
+      `${this.symbol}`,
       yesterday.toString(),
       today.toString(),
       { aggregation: { type: "avg", timeBucket: 1000 * 60 } }
