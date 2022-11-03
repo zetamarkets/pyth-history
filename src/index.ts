@@ -161,7 +161,7 @@ app.get("/tv/history", async (req, res) => {
   const marketName = req.query.symbol as string;
   let asset = assets.Asset.UNDEFINED;
   try {
-    asset = assets.nameToAsset(marketName);
+    asset = assets.nameToAsset(marketName.replace("-PERP", ""));
   } catch (_e) {}
   const resolution = resolutions[req.query.resolution as string] as number;
   let from = parseInt(req.query.from as string) * 1000;
