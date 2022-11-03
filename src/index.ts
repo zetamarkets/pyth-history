@@ -66,23 +66,21 @@ function candleListToLineRows(candles: CandleList): LineRow[] {
   return rows;
 }
 
-async function exchangeCallback(
-  asset: assets.Asset,
-  eventType: events.EventType,
-  _data: any
-) {
-  if (eventType == events.EventType.GREEKS) {
-    let midpoint = utils.convertNativeIntegerToDecimal(
-      Exchange.getGreeks(asset).perpLatestMidpoint.toNumber()
-    );
+async function readMidpoints() {
+  await Promise.all(
+    Exchange.assets.map(async (asset) => {
+      let midpoint = utils.convertNativeIntegerToDecimal(
+        Exchange.getGreeks(asset).perpLatestMidpoint.toNumber()
+      );
 
-    // If the orderbook is empty just grab the oracle price so we don't have gaps
-    if (midpoint == 0) {
-      midpoint = Exchange.getMarkPrice(asset, constants.PERP_INDEX);
-    }
+      // If the orderbook is empty just grab the oracle price so we don't have gaps
+      if (midpoint == 0) {
+        midpoint = Exchange.getMarkPrice(asset, constants.PERP_INDEX);
+      }
 
-    collectMidpoint(storeMap.get(asset)!, midpoint, feedNameMap.get(asset)!);
-  }
+      collectMidpoint(storeMap.get(asset)!, midpoint, feedNameMap.get(asset)!);
+    })
+  );
 }
 
 async function main(client: RedisTimeSeries) {
@@ -104,11 +102,18 @@ async function main(client: RedisTimeSeries) {
       new PublicKey(process.env.PROGRAM_ID!),
       process.env.NETWORK! == "devnet" ? Network.DEVNET : Network.MAINNET,
       connection,
-      utils.defaultCommitment(),
-      undefined,
-      undefined,
-      exchangeCallback
+      utils.defaultCommitment()
     );
+
+    setInterval(async function () {
+      readMidpoints();
+    }, 1000);
+
+    // Easier than reloading the exchange as most of the startup time is exchange loading anyway
+    // `forever` will catch this and restart automatically
+    setInterval(async () => {
+      throw new Error("Scheduled daily restart");
+    }, 86_400_000); // 24 hours
   } catch (e) {
     console.error(e);
     client.disconnect();
