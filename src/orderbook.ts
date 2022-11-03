@@ -6,6 +6,6 @@ export async function collectMidpoint(
   feedName: string
 ) {
   const ts = Date.now();
-  console.log(`[${feedName}] ${midpoint}`);
+  console.log(`[${feedName}] midpoint=${midpoint} ts=${ts}`);
   await store.client.add(feedName, ts.toString(), midpoint.toString());
 }
