@@ -66,9 +66,11 @@ async function exchangeCallback(
   _data: any
 ) {
   if (eventType == events.EventType.GREEKS) {
-    let midpoint = Exchange.getGreeks(asset).perpLatestMidpoint.toNumber();
+    let midpoint = utils.convertNativeIntegerToDecimal(
+      Exchange.getGreeks(asset).perpLatestMidpoint.toNumber()
+    );
     // Greeks can update independent of midpoint
-    if (midpoint != currentMidpointMap.get(asset) && midpoint != 0) {
+    if (midpoint != 0) {
       collectMidpoint(storeMap.get(asset)!, midpoint, feedNameMap.get(asset)!);
       currentMidpointMap.set(asset, midpoint);
     }
@@ -128,10 +130,10 @@ app.get("/tv/symbols", async (req, res) => {
     name: symbol,
     ticker: symbol,
     description: symbol,
-    type: "Spot",
+    type: "Perps",
     session: "24x7",
-    exchange: "Pyth",
-    listed_exchange: "Pyth",
+    exchange: "Zeta",
+    listed_exchange: "Zeta",
     timezone: "Etc/UTC",
     has_intraday: true,
     supported_resolutions: Object.keys(resolutions),
