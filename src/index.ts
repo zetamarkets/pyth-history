@@ -3,7 +3,14 @@ import { RedisTimeSeries } from "redis-modules-sdk";
 import { URL } from "url";
 import { createRedisStore, RedisStore } from "./redis";
 import { collectMidpoint } from "./orderbook";
-import { assets, events, Exchange, Network, utils } from "@zetamarkets/sdk";
+import {
+  assets,
+  constants,
+  events,
+  Exchange,
+  Network,
+  utils,
+} from "@zetamarkets/sdk";
 import { Connection, PublicKey } from "@solana/web3.js";
 import express from "express";
 import cors from "cors";
@@ -68,10 +75,13 @@ async function exchangeCallback(
     let midpoint = utils.convertNativeIntegerToDecimal(
       Exchange.getGreeks(asset).perpLatestMidpoint.toNumber()
     );
-    // Greeks can update independent of midpoint
-    if (midpoint != 0) {
-      collectMidpoint(storeMap.get(asset)!, midpoint, feedNameMap.get(asset)!);
+
+    // If the orderbook is empty just grab the oracle price so we don't have gaps
+    if (midpoint == 0) {
+      midpoint = Exchange.getMarkPrice(asset, constants.PERP_INDEX);
     }
+
+    collectMidpoint(storeMap.get(asset)!, midpoint, feedNameMap.get(asset)!);
   }
 }
 
