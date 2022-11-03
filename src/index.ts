@@ -30,7 +30,6 @@ const connection: Connection = new Connection(
 );
 
 let storeMap = new Map<assets.Asset, RedisStore>();
-let currentMidpointMap = new Map<assets.Asset, number>();
 let feedNameMap = new Map<assets.Asset, string>();
 
 function candleListToCandleRows(candles: CandleList): CandleRow[] {
@@ -72,7 +71,6 @@ async function exchangeCallback(
     // Greeks can update independent of midpoint
     if (midpoint != 0) {
       collectMidpoint(storeMap.get(asset)!, midpoint, feedNameMap.get(asset)!);
-      currentMidpointMap.set(asset, midpoint);
     }
   }
 }
@@ -87,7 +85,6 @@ async function main(client: RedisTimeSeries) {
         asset,
         await createRedisStore(redisConfig, assets.assetToName(asset)!)
       );
-      currentMidpointMap.set(asset, 0);
       feedNameMap.set(asset, `${assets.assetToName(asset)}-PERP`);
     }
 
