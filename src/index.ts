@@ -21,6 +21,12 @@ import { CandleList, CandleRow, LineRow } from "./interfaces";
 const redisUrl = new URL(
   process.env.REDISCLOUD_URL || "redis://localhost:6379"
 );
+
+// Retention time in milliseconds
+const retention = process.env.RETENTION_TIME
+  ? parseInt(process.env.RETENTION_TIME)
+  : 7889400000; // 3 months
+
 const host = redisUrl.hostname;
 const port = parseInt(redisUrl.port);
 let password: string | undefined;
@@ -74,11 +80,22 @@ async function readMidpoints() {
       );
 
       // If the orderbook is empty just grab the oracle price so we don't have gaps
-      if (midpoint == 0) {
-        midpoint = Exchange.getMarkPrice(asset, constants.PERP_INDEX);
+      // Timeout check is useful to prevent staleness in halt situations
+      if (
+        midpoint == 0 ||
+        Date.now() / 1000 -
+          Exchange.getGreeks(asset).perpUpdateTimestamp.toNumber() >
+          60
+      ) {
+        midpoint = Exchange.oracle.getPrice(asset).price;
       }
 
-      collectMidpoint(storeMap.get(asset)!, midpoint, feedNameMap.get(asset)!);
+      collectMidpoint(
+        storeMap.get(asset)!,
+        midpoint,
+        feedNameMap.get(asset)!,
+        retention
+      );
     })
   );
 }
@@ -105,9 +122,14 @@ async function main(client: RedisTimeSeries) {
       utils.defaultCommitment()
     );
 
-    setInterval(async function () {
-      readMidpoints();
-    }, 1000);
+    setInterval(
+      async function () {
+        readMidpoints();
+      },
+      process.env.READ_MIDPOINT_INTERVAL
+        ? parseInt(process.env.READ_MIDPOINT_INTERVAL)
+        : 1000
+    );
 
     // Easier than reloading the exchange as most of the startup time is exchange loading anyway
     // `forever` will catch this and restart automatically
