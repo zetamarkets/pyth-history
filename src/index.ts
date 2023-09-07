@@ -9,6 +9,7 @@ import {
   events,
   Exchange,
   Network,
+  types,
   utils,
 } from "@zetamarkets/sdk";
 import { Connection, PublicKey } from "@solana/web3.js";
@@ -42,8 +43,8 @@ const connection: Connection = new Connection(
   "confirmed"
 );
 
-let storeMap = new Map<assets.Asset, RedisStore>();
-let feedNameMap = new Map<assets.Asset, string>();
+let storeMap = new Map<constants.Asset, RedisStore>();
+let feedNameMap = new Map<constants.Asset, string>();
 
 function candleListToCandleRows(candles: CandleList): CandleRow[] {
   let rows = [];
@@ -75,19 +76,32 @@ function candleListToLineRows(candles: CandleList): LineRow[] {
 async function readMidpoints() {
   await Promise.all(
     Exchange.assets.map(async (asset) => {
-      let midpoint = utils.convertNativeIntegerToDecimal(
-        Exchange.getGreeks(asset).perpLatestMidpoint.toNumber()
-      );
+      let midpoint = 0;
+
+      if (!Exchange.isSetup) return;
+      let orderbook = Exchange.getOrderbook(asset);
+      let markPrice = Exchange.oracle.getPrice(asset).price;
 
       // If the orderbook is empty just grab the oracle price so we don't have gaps
       // Timeout check is useful to prevent staleness in halt situations
       if (
-        midpoint == 0 ||
+        orderbook.bids.length < 1 ||
+        orderbook.asks.length < 1 ||
         Date.now() / 1000 -
-          Exchange.getGreeks(asset).perpUpdateTimestamp.toNumber() >
+          Exchange.pricing.updateTimestamps[
+            assets.assetToIndex(asset)
+          ].toNumber() >
           60
       ) {
-        midpoint = Exchange.oracle.getPrice(asset).price;
+        midpoint = markPrice;
+      } else {
+        midpoint = (orderbook.asks[0].price + orderbook.bids[0].price) / 2;
+
+        // clamp to maximum 2% away from oracle
+        midpoint = Math.max(
+          0.98 * markPrice,
+          Math.min(midpoint, 1.02 * markPrice)
+        );
       }
 
       collectMidpoint(
@@ -98,6 +112,7 @@ async function readMidpoints() {
       );
     })
   );
+  console.log();
 }
 
 async function main(client: RedisTimeSeries) {
@@ -114,13 +129,15 @@ async function main(client: RedisTimeSeries) {
     }
 
     console.log("Loading Zeta Exchange...");
-    await Exchange.load(
-      assets.allAssets(),
-      new PublicKey(process.env.PROGRAM_ID!),
-      process.env.NETWORK! == "devnet" ? Network.DEVNET : Network.MAINNET,
+    const loadExchangeConfig = types.defaultLoadExchangeConfig(
+      Network.MAINNET,
       connection,
-      utils.defaultCommitment()
+      utils.defaultCommitment(),
+      undefined,
+      true
     );
+
+    await Exchange.load(loadExchangeConfig);
 
     setInterval(
       async function () {
@@ -181,7 +198,7 @@ app.get("/tv/symbols", async (req, res) => {
 app.get("/tv/history", async (req, res) => {
   // parse
   const marketName = req.query.symbol as string;
-  let asset = assets.Asset.UNDEFINED;
+  let asset = constants.Asset.UNDEFINED;
   try {
     asset = assets.nameToAsset(marketName.replace("-PERP", ""));
   } catch (_e) {}
