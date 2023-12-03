@@ -10,5 +10,6 @@ export async function collectMidpoint(
   console.log(`[${feedName}] midpoint=${midpoint} ts=${ts}`);
   await store.client.add(feedName, ts.toString(), midpoint.toString(), {
     retention: retention,
+    onDuplicate: "LAST",
   });
 }
