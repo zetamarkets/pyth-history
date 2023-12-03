@@ -3,6 +3,8 @@ const MINUTES = 60 * SECONDS;
 const HOURS = 60 * MINUTES;
 
 export const resolutions: { [id: string]: number | undefined } = {
+  "1S": 1 * SECONDS,
+  "5S": 5 * SECONDS,
   "1": 1 * MINUTES,
   "3": 3 * MINUTES,
   "5": 5 * MINUTES,
