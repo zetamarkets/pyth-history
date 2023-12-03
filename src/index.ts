@@ -18,6 +18,11 @@ import cors from "cors";
 import { resolutions } from "./time";
 import { CandleList, CandleRow, LineRow } from "./interfaces";
 
+// Adds timestamp to the start of each log, including modules
+require("log-timestamp")(function () {
+  return `[${new Date().toUTCString()}]`;
+});
+
 // Redis config
 const redisUrl = new URL(
   process.env.REDISCLOUD_URL || "redis://localhost:6379"
@@ -35,7 +40,7 @@ if (redisUrl.password !== "") {
   password = redisUrl.password;
 }
 const redisConfig = { host, port, password };
-const client = new RedisTimeSeries(redisConfig);
+const client = new RedisTimeSeries(redisConfig, { isHandleError: false });
 
 // Solana web3 config
 const connection: Connection = new Connection(
@@ -74,6 +79,7 @@ function candleListToLineRows(candles: CandleList): LineRow[] {
 }
 
 async function readMidpoints() {
+  await Exchange.updateZetaPricing();
   await Promise.all(
     Exchange.assets.map(async (asset) => {
       let midpoint = 0;
@@ -81,6 +87,7 @@ async function readMidpoints() {
       if (!Exchange.isSetup) return;
       let orderbook = Exchange.getOrderbook(asset);
       let markPrice = Exchange.oracle.getPrice(asset).price;
+      console.log(`[${asset}] markPrice=${markPrice}`);
 
       // If the orderbook is empty just grab the oracle price so we don't have gaps
       // Timeout check is useful to prevent staleness in halt situations
@@ -91,16 +98,17 @@ async function readMidpoints() {
           Exchange.pricing.updateTimestamps[
             assets.assetToIndex(asset)
           ].toNumber() >
-          60
+          120
       ) {
+	console.log(`[${asset}] Overriding midpoint with mark price. bidsLen=${orderbook.bids.length} asksLen=${orderbook.asks.length} now=${Date.now()/1000} updateTs=${Exchange.pricing.updateTimestamps[assets.assetToIndex(asset)].toNumber()}`);
         midpoint = markPrice;
       } else {
         midpoint = (orderbook.asks[0].price + orderbook.bids[0].price) / 2;
-
-        // clamp to maximum 2% away from oracle
+        console.log(`[${asset}] Orderbook midpoint = ${midpoint}`);
+        // clamp to maximum 0.5% away from oracle
         midpoint = Math.max(
-          0.98 * markPrice,
-          Math.min(midpoint, 1.02 * markPrice)
+          0.995 * markPrice,
+          Math.min(midpoint, 1.005 * markPrice)
         );
       }
 
@@ -190,6 +198,7 @@ app.get("/tv/symbols", async (req, res) => {
     supported_resolutions: Object.keys(resolutions),
     minmov: 1,
     pricescale: 100,
+    has_seconds: true,
   };
   res.set("Cache-control", "public, max-age=360");
   res.send(response);
@@ -208,7 +217,7 @@ app.get("/tv/history", async (req, res) => {
   const chartType = req.query.type || "candle";
 
   // validate
-  const validSymbol = asset in assets.allAssets();
+  const validSymbol = assets.allAssets().includes(asset);
   const validResolution = resolution != undefined;
   const validFrom = true || new Date(from).getFullYear() >= 2021;
   if (!(validSymbol && validResolution && validFrom)) {
@@ -261,8 +270,15 @@ app.get("/tv/history", async (req, res) => {
     res.set("Cache-control", "public, max-age=1");
     res.send(response);
     return;
-  } catch (e) {
+  } catch (e: any) {
     console.error({ req, e });
+
+    // Redis issue - crash
+    if (e.message.toString().includes("Connection is closed")) {
+      console.log("Purposely crashing");
+      process.exit(0);
+    }
+
     const error = { s: "error" };
     res.status(500).send(error);
   }
